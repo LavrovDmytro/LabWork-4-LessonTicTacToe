@@ -1,6 +1,6 @@
 package com.example.lessontictactoe
 
-const val DIM=3
+var DIM = 3
 
 enum class GameState {
     IN_PROGRESS,
@@ -9,32 +9,48 @@ enum class GameState {
     DRAW
 }
 
-fun checkGameState (field: List<CellState>) : GameState
-{
-    val winLines=listOf(
-        listOf(0, 1,2),
-        listOf(3, 4,5),
-        listOf(6, 7,8),
-        listOf(0, 3, 6),
-        listOf(1, 4, 7),
-        listOf(2, 5, 8),
-        listOf(0,4,8),
-        listOf(2, 4, 6)
-    )
-
-    for (line in winLines)
-    {
-        val(a, b, c)=line
-        if(field[a]!= CellState.EMPTY && field[a]==field[b] && field[b]==field[c])
-        {
-           return when(field[a])
-           {
-               CellState.CROSS -> GameState.CROSS_WIN
-               CellState.NOUGHT -> GameState.NOUGHT_WIN
-               else -> GameState.IN_PROGRESS
-           }
+fun checkGameState(field: List<CellState>): GameState {
+    // Check rows
+    for (row in 0 until DIM) {
+        val start = row * DIM
+        if (checkLine(field, start, 1)) {
+            return when (field[start]) {
+                CellState.CROSS -> GameState.CROSS_WIN
+                CellState.NOUGHT -> GameState.NOUGHT_WIN
+                else -> GameState.IN_PROGRESS
+            }
         }
     }
+
+    // Check columns
+    for (col in 0 until DIM) {
+        if (checkLine(field, col, DIM)) {
+            return when (field[col]) {
+                CellState.CROSS -> GameState.CROSS_WIN
+                CellState.NOUGHT -> GameState.NOUGHT_WIN
+                else -> GameState.IN_PROGRESS
+            }
+        }
+    }
+
+    // Check main diagonal
+    if (checkLine(field, 0, DIM + 1)) {
+        return when (field[0]) {
+            CellState.CROSS -> GameState.CROSS_WIN
+            CellState.NOUGHT -> GameState.NOUGHT_WIN
+            else -> GameState.IN_PROGRESS
+        }
+    }
+
+    // Check anti-diagonal
+    if (checkLine(field, DIM - 1, DIM - 1)) {
+        return when (field[DIM - 1]) {
+            CellState.CROSS -> GameState.CROSS_WIN
+            CellState.NOUGHT -> GameState.NOUGHT_WIN
+            else -> GameState.IN_PROGRESS
+        }
+    }
+
     return if (field.any { it == CellState.EMPTY }) {
         GameState.IN_PROGRESS
     } else {
@@ -42,15 +58,25 @@ fun checkGameState (field: List<CellState>) : GameState
     }
 }
 
+private fun checkLine(field: List<CellState>, start: Int, step: Int): Boolean {
+    val first = field[start]
+    if (first == CellState.EMPTY) return false
+    
+    var current = start
+    for (i in 1 until DIM) {
+        current += step
+        if (field[current] != first) return false
+    }
+    return true
+}
 
 enum class Player {
     CROSS,
     NOUGHT
 }
-//-------------------------------------------------------
+
 val Player.mark: CellState
-    get()=when(this)
-    {
+    get() = when(this) {
         Player.CROSS -> CellState.CROSS
         Player.NOUGHT -> CellState.NOUGHT
     }
@@ -67,71 +93,71 @@ val field=MutableList(DIM*DIM) {
 
 fun printField(field: List<CellState>) {
     for (row in 0 until DIM) {
-        for(col in 0 until DIM){
-            val index=row*DIM+col
-            val symbol=when(field[index])
-            {
+        for (col in 0 until DIM) {
+            val index = row * DIM + col
+            val symbol = when(field[index]) {
                 CellState.EMPTY -> "_"
                 CellState.CROSS -> "X"
                 CellState.NOUGHT -> "0"
             }
-            print("$symbol")
+            print("$symbol ")
         }
         println()
     }
-
 }
 
+fun main() {
+    println("Select board size (3-5):")
+    DIM = readln().toInt()
+    if (DIM !in 3..5) {
+        println("Invalid size. Using default 3x3.")
+        DIM = 3
+    }
 
-fun main()
-{
-   val field= MutableList(DIM*DIM) { CellState.EMPTY }
-    var currentPlayer= Player.CROSS
+    val field = MutableList(DIM * DIM) { CellState.EMPTY }
+    var currentPlayer = Player.CROSS
 
     while (true) {
         printField(field)
-
-        println("Player's move ${if(currentPlayer== Player.CROSS) "X" else "0"}")
-
-        println("Enter the move(row and col, separated by space)")
-        val input=readln()
-         val(row, col)=input.split(" ").map {it.toInt()}
-
-        val index=row*DIM+col
-        if (field[index]!= CellState.EMPTY) {
-            println("Try again")
+        println("Player's move ${if(currentPlayer == Player.CROSS) "X" else "0"}")
+        println("Enter the move (row and col, separated by space)")
+        
+        val input = readln()
+        val (row, col) = input.split(" ").map { it.toInt() }
+        
+        if (row !in 0 until DIM || col !in 0 until DIM) {
+            println("Invalid move. Try again.")
             continue
         }
 
-        field[index]= currentPlayer.mark
+        val index = row * DIM + col
+        if (field[index] != CellState.EMPTY) {
+            println("Cell already taken. Try again.")
+            continue
+        }
 
-        val state=checkGameState(field)
-        when(state)
-        {
+        field[index] = currentPlayer.mark
+
+        val state = checkGameState(field)
+        when(state) {
             GameState.CROSS_WIN -> {
                 printField(field)
-                println("Win X")
+                println("X wins!")
                 break
             }
-
             GameState.NOUGHT_WIN -> {
                 printField(field)
-                println("Win 0")
+                println("0 wins!")
                 break
             }
             GameState.DRAW -> {
                 printField(field)
-                println("Draw")
+                println("It's a draw!")
                 break
             }
-
-            GameState.IN_PROGRESS -> { }
+            GameState.IN_PROGRESS -> {
+                currentPlayer = if(currentPlayer == Player.CROSS) Player.NOUGHT else Player.CROSS
+            }
         }
-
-        currentPlayer=if(currentPlayer== Player.CROSS) Player.NOUGHT else Player.CROSS
-
-        println()
     }
-
-
 }
