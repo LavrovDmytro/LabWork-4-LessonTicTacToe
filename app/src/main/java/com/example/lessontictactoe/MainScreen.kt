@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,6 +22,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lessontictactoe.ui.theme.LessonTicTacToeTheme
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 data class GameScore(
     var xWins: Int = 0,
@@ -93,6 +96,25 @@ fun GameBoard(
     val field = remember { mutableStateListOf(*Array(dim * dim) { "_" }) }
     var currentPlayer by remember { mutableStateOf("X") }
     var gameState by remember { mutableStateOf("") }
+    var timeLeft by remember { mutableStateOf(10) }
+    var isTimerActive by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+    
+    // Timer effect
+    LaunchedEffect(currentPlayer, gameState) {
+        if (gameState.isEmpty()) {
+            isTimerActive = true
+            timeLeft = 10
+            while (timeLeft > 0 && isTimerActive) {
+                delay(1000)
+                timeLeft--
+            }
+            if (timeLeft == 0 && isTimerActive) {
+                // Time's up, switch player
+                currentPlayer = if (currentPlayer == "X") "0" else "X"
+            }
+        }
+    }
     
     Column {
         // Display scores
@@ -122,15 +144,33 @@ fun GameBoard(
             )
         }
 
-        // Display current player
-        Text(
-            text = "Current Player: $currentPlayer",
-            style = MaterialTheme.typography.titleMedium,
+        // Display current player and timer
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
-            textAlign = TextAlign.Center
-        )
+                .padding(8.dp)
+        ) {
+            Text(
+                text = "Current Player: $currentPlayer",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+            if (gameState.isEmpty()) {
+                Text(
+                    text = "Time left: $timeLeft seconds",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                LinearProgressIndicator(
+                    progress = timeLeft / 10f,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
+            }
+        }
 
         // Display game state if game is over
         if (gameState.isNotEmpty()) {
@@ -155,6 +195,7 @@ fun GameBoard(
                             .border(2.dp, MaterialTheme.colorScheme.primary)
                             .clickable {
                                 if (field[index] == "_" && gameState.isEmpty()) {
+                                    isTimerActive = false // Stop current timer
                                     field[index] = currentPlayer
                                     
                                     // Check for win
@@ -172,6 +213,7 @@ fun GameBoard(
                                         onScoreUpdate(newScore)
                                     } else {
                                         currentPlayer = if (currentPlayer == "X") "0" else "X"
+                                        isTimerActive = true // Start new timer
                                     }
                                 }
                             },
@@ -199,6 +241,7 @@ fun GameBoard(
                         field.addAll(Array(dim * dim) { "_" })
                         currentPlayer = "X"
                         gameState = ""
+                        isTimerActive = true
                     },
                     modifier = Modifier
                         .weight(1f)
@@ -212,6 +255,7 @@ fun GameBoard(
                         field.addAll(Array(dim * dim) { "_" })
                         currentPlayer = "X"
                         gameState = ""
+                        isTimerActive = true
                         onScoreUpdate(GameScore()) // Reset score
                     },
                     modifier = Modifier
