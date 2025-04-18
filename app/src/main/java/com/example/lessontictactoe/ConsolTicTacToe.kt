@@ -83,10 +83,6 @@ enum class CellState {
     NOUGHT
 }
 
-val field = MutableList(DIM * DIM) {
-    CellState.EMPTY
-}
-
 fun printField(field: List<CellState>) {
     for (row in 0 until DIM) {
         for (col in 0 until DIM) {
