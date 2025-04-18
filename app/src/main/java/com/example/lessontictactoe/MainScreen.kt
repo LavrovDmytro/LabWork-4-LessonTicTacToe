@@ -22,10 +22,17 @@ import androidx.compose.ui.unit.dp
 import com.example.lessontictactoe.ui.theme.LessonTicTacToeTheme
 import androidx.compose.runtime.*
 
+data class GameScore(
+    var xWins: Int = 0,
+    var oWins: Int = 0,
+    var draws: Int = 0
+)
+
 @Composable
 fun MainScreen(modifier: Modifier = Modifier) {
     var selectedSize by remember { mutableStateOf(3) }
     var gameStarted by remember { mutableStateOf(false) }
+    var gameScore by remember { mutableStateOf(GameScore()) }
 
     Column(modifier = modifier) {
         Text(
@@ -68,18 +75,53 @@ fun MainScreen(modifier: Modifier = Modifier) {
                 }
             }
         } else {
-            GameBoard(dim = selectedSize)
+            GameBoard(
+                dim = selectedSize,
+                gameScore = gameScore,
+                onScoreUpdate = { newScore -> gameScore = newScore }
+            )
         }
     }
 }
 
 @Composable
-fun GameBoard(dim: Int) {
+fun GameBoard(
+    dim: Int,
+    gameScore: GameScore,
+    onScoreUpdate: (GameScore) -> Unit
+) {
     val field = remember { mutableStateListOf(*Array(dim * dim) { "_" }) }
     var currentPlayer by remember { mutableStateOf("X") }
     var gameState by remember { mutableStateOf("") }
     
     Column {
+        // Display scores
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "X: ${gameScore.xWins}",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "Draws: ${gameScore.draws}",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "O: ${gameScore.oWins}",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center
+            )
+        }
+
         // Display current player
         Text(
             text = "Current Player: $currentPlayer",
@@ -118,8 +160,16 @@ fun GameBoard(dim: Int) {
                                     // Check for win
                                     if (checkWin(field, dim, currentPlayer)) {
                                         gameState = "$currentPlayer wins!"
+                                        val newScore = gameScore.copy()
+                                        when (currentPlayer) {
+                                            "X" -> newScore.xWins++
+                                            "0" -> newScore.oWins++
+                                        }
+                                        onScoreUpdate(newScore)
                                     } else if (!field.contains("_")) {
                                         gameState = "It's a draw!"
+                                        val newScore = gameScore.copy(draws = gameScore.draws + 1)
+                                        onScoreUpdate(newScore)
                                     } else {
                                         currentPlayer = if (currentPlayer == "X") "0" else "X"
                                     }
@@ -136,20 +186,40 @@ fun GameBoard(dim: Int) {
             }
         }
 
-        // Restart button
+        // Game controls
         if (gameState.isNotEmpty()) {
-            Button(
-                onClick = {
-                    field.clear()
-                    field.addAll(Array(dim * dim) { "_" })
-                    currentPlayer = "X"
-                    gameState = ""
-                },
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                Text("Play Again")
+                Button(
+                    onClick = {
+                        field.clear()
+                        field.addAll(Array(dim * dim) { "_" })
+                        currentPlayer = "X"
+                        gameState = ""
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 4.dp)
+                ) {
+                    Text("Next Round")
+                }
+                Button(
+                    onClick = {
+                        field.clear()
+                        field.addAll(Array(dim * dim) { "_" })
+                        currentPlayer = "X"
+                        gameState = ""
+                        onScoreUpdate(GameScore()) // Reset score
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 4.dp)
+                ) {
+                    Text("New Game")
+                }
             }
         }
     }
