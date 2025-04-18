@@ -36,6 +36,7 @@ fun MainScreen(modifier: Modifier = Modifier) {
     var selectedSize by remember { mutableStateOf(3) }
     var gameStarted by remember { mutableStateOf(false) }
     var gameScore by remember { mutableStateOf(GameScore()) }
+    var showScoreDialog by remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
         Text(
@@ -81,8 +82,58 @@ fun MainScreen(modifier: Modifier = Modifier) {
             GameBoard(
                 dim = selectedSize,
                 gameScore = gameScore,
-                onScoreUpdate = { newScore -> gameScore = newScore }
+                onScoreUpdate = { newScore -> gameScore = newScore },
+                onShowScore = { showScoreDialog = true },
+                onNewGame = { 
+                    gameStarted = false
+                    showScoreDialog = false  // Закриваємо діалог при поверненні до вибору поля
+                }
             )
+
+            // Score Dialog - перенесено всередину блоку else
+            if (showScoreDialog) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .border(2.dp, MaterialTheme.colorScheme.primary)
+                        .padding(16.dp)
+                ) {
+                    Column {
+                        Text(
+                            text = "Game Statistics",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "X Wins: ${gameScore.xWins}",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                        Text(
+                            text = "O Wins: ${gameScore.oWins}",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                        Text(
+                            text = "Draws: ${gameScore.draws}",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                        Button(
+                            onClick = { showScoreDialog = false },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp)
+                        ) {
+                            Text("Close")
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -91,14 +142,15 @@ fun MainScreen(modifier: Modifier = Modifier) {
 fun GameBoard(
     dim: Int,
     gameScore: GameScore,
-    onScoreUpdate: (GameScore) -> Unit
+    onScoreUpdate: (GameScore) -> Unit,
+    onShowScore: () -> Unit,
+    onNewGame: () -> Unit
 ) {
     val field = remember { mutableStateListOf(*Array(dim * dim) { "_" }) }
     var currentPlayer by remember { mutableStateOf("X") }
     var gameState by remember { mutableStateOf("") }
     var timeLeft by remember { mutableStateOf(10) }
     var isTimerActive by remember { mutableStateOf(true) }
-    val scope = rememberCoroutineScope()
     
     // Timer effect
     LaunchedEffect(currentPlayer, gameState) {
@@ -142,6 +194,45 @@ fun GameBoard(
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center
             )
+        }
+
+        // Game controls
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+        ) {
+            Button(
+                onClick = {
+                    field.clear()
+                    field.addAll(Array(dim * dim) { "_" })
+                    currentPlayer = "X"
+                    gameState = ""
+                    isTimerActive = true
+                    timeLeft = 10
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 2.dp)
+            ) {
+                Text("Reset Round")
+            }
+            Button(
+                onClick = onShowScore,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 2.dp)
+            ) {
+                Text("Show Score")
+            }
+            Button(
+                onClick = onNewGame,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 2.dp)
+            ) {
+                Text("New Game")
+            }
         }
 
         // Display current player and timer
@@ -224,45 +315,6 @@ fun GameBoard(
                             style = MaterialTheme.typography.headlineMedium
                         )
                     }
-                }
-            }
-        }
-
-        // Game controls
-        if (gameState.isNotEmpty()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Button(
-                    onClick = {
-                        field.clear()
-                        field.addAll(Array(dim * dim) { "_" })
-                        currentPlayer = "X"
-                        gameState = ""
-                        isTimerActive = true
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 4.dp)
-                ) {
-                    Text("Next Round")
-                }
-                Button(
-                    onClick = {
-                        field.clear()
-                        field.addAll(Array(dim * dim) { "_" })
-                        currentPlayer = "X"
-                        gameState = ""
-                        isTimerActive = true
-                        onScoreUpdate(GameScore()) // Reset score
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 4.dp)
-                ) {
-                    Text("New Game")
                 }
             }
         }
