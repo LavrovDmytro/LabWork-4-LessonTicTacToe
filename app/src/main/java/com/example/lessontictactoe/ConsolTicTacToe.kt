@@ -10,7 +10,6 @@ enum class GameState {
 }
 
 fun checkGameState(field: List<CellState>): GameState {
-    // Check rows
     for (row in 0 until DIM) {
         val start = row * DIM
         if (checkLine(field, start, 1)) {
@@ -22,7 +21,6 @@ fun checkGameState(field: List<CellState>): GameState {
         }
     }
 
-    // Check columns
     for (col in 0 until DIM) {
         if (checkLine(field, col, DIM)) {
             return when (field[col]) {
@@ -33,7 +31,6 @@ fun checkGameState(field: List<CellState>): GameState {
         }
     }
 
-    // Check main diagonal
     if (checkLine(field, 0, DIM + 1)) {
         return when (field[0]) {
             CellState.CROSS -> GameState.CROSS_WIN
@@ -42,7 +39,6 @@ fun checkGameState(field: List<CellState>): GameState {
         }
     }
 
-    // Check anti-diagonal
     if (checkLine(field, DIM - 1, DIM - 1)) {
         return when (field[DIM - 1]) {
             CellState.CROSS -> GameState.CROSS_WIN
@@ -87,7 +83,7 @@ enum class CellState {
     NOUGHT
 }
 
-val field=MutableList(DIM*DIM) {
+val field = MutableList(DIM * DIM) {
     CellState.EMPTY
 }
 

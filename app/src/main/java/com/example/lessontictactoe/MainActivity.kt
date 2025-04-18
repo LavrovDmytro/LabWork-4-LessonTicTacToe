@@ -18,7 +18,6 @@ class MainActivity : ComponentActivity() {
             LessonTicTacToeTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     MainScreen(modifier = Modifier.padding(innerPadding))
-
                 }
             }
         }

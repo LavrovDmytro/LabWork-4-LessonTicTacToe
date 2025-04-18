@@ -2,33 +2,27 @@ package com.example.lessontictactoe
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.example.lessontictactoe.ui.theme.LessonTicTacToeTheme
-import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 data class GameScore(
     var xWins: Int = 0,
     var oWins: Int = 0,
     var draws: Int = 0
+)
+
+data class PlayerSymbols(
+    var player1: String = "X",
+    var player2: String = "0"
 )
 
 @Composable
@@ -37,99 +31,194 @@ fun MainScreen(modifier: Modifier = Modifier) {
     var gameStarted by remember { mutableStateOf(false) }
     var gameScore by remember { mutableStateOf(GameScore()) }
     var showScoreDialog by remember { mutableStateOf(false) }
+    var showSymbolsDialog by remember { mutableStateOf(false) }
+    var isDarkTheme by remember { mutableStateOf(false) }
+    var playerSymbols by remember { mutableStateOf(PlayerSymbols()) }
 
-    Column(modifier = modifier) {
-        Text(
-            text = "Tic Tac Toe",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            textAlign = TextAlign.Center
-        )
-
-        if (!gameStarted) {
-            Text(
-                text = "Select Board Size",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                textAlign = TextAlign.Center
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                for (size in 3..5) {
-                    Button(
-                        onClick = {
-                            selectedSize = size
-                            gameStarted = true
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(4.dp)
-                    ) {
-                        Text("${size}x$size")
-                    }
-                }
-            }
-        } else {
-            GameBoard(
-                dim = selectedSize,
-                gameScore = gameScore,
-                onScoreUpdate = { newScore -> gameScore = newScore },
-                onShowScore = { showScoreDialog = true },
-                onNewGame = { 
-                    gameStarted = false
-                    showScoreDialog = false  // Закриваємо діалог при поверненні до вибору поля
-                }
-            )
-
-            // Score Dialog - перенесено всередину блоку else
-            if (showScoreDialog) {
-                Box(
+    LessonTicTacToeTheme(darkTheme = isDarkTheme) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column(modifier = modifier) {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
-                        .border(2.dp, MaterialTheme.colorScheme.primary)
-                        .padding(16.dp)
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Text(
+                        text = "Tic Tac Toe",
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                    Switch(
+                        checked = isDarkTheme,
+                        onCheckedChange = { isDarkTheme = it }
+                    )
+                }
+
+                if (!gameStarted) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
-                            text = "Game Statistics",
-                            style = MaterialTheme.typography.titleLarge,
+                            text = "Select Board Size",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(8.dp)
+                        )
+
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 16.dp),
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "X Wins: ${gameScore.xWins}",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                        Text(
-                            text = "O Wins: ${gameScore.oWins}",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                        Text(
-                            text = "Draws: ${gameScore.draws}",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                        Button(
-                            onClick = { showScoreDialog = false },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 16.dp)
+                                .padding(8.dp)
                         ) {
-                            Text("Close")
+                            for (size in 3..5) {
+                                Button(
+                                    onClick = {
+                                        selectedSize = size
+                                        gameStarted = true
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(4.dp)
+                                ) {
+                                    Text("${size}x$size")
+                                }
+                            }
+                        }
+
+                        Button(
+                            onClick = { showSymbolsDialog = true },
+                            modifier = Modifier.padding(8.dp)
+                        ) {
+                            Text("Customize Symbols")
+                        }
+                    }
+                } else {
+                    GameBoard(
+                        dim = selectedSize,
+                        gameScore = gameScore,
+                        playerSymbols = playerSymbols,
+                        onScoreUpdate = { newScore -> gameScore = newScore },
+                        onShowScore = { showScoreDialog = true },
+                        onNewGame = { 
+                            gameStarted = false
+                            showScoreDialog = false
+                        }
+                    )
+                }
+
+                if (showScoreDialog) {
+                    Dialog(onDismissRequest = { showScoreDialog = false }) {
+                        Surface(
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "Game Statistics",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 16.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "${playerSymbols.player1} Wins: ${gameScore.xWins}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                                Text(
+                                    text = "${playerSymbols.player2} Wins: ${gameScore.oWins}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                                Text(
+                                    text = "Draws: ${gameScore.draws}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                                Button(
+                                    onClick = { showScoreDialog = false },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 16.dp)
+                                ) {
+                                    Text("Close")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (showSymbolsDialog) {
+                    var tempPlayer1 by remember { mutableStateOf(playerSymbols.player1) }
+                    var tempPlayer2 by remember { mutableStateOf(playerSymbols.player2) }
+
+                    Dialog(onDismissRequest = { showSymbolsDialog = false }) {
+                        Surface(
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+        Text(
+                                    text = "Customize Symbols",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 16.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                                
+                                OutlinedTextField(
+                                    value = tempPlayer1,
+                                    onValueChange = { if (it.length <= 1) tempPlayer1 = it },
+                                    label = { Text("Player 1 Symbol") },
+                                    singleLine = true,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp)
+                                )
+                                
+                                OutlinedTextField(
+                                    value = tempPlayer2,
+                                    onValueChange = { if (it.length <= 1) tempPlayer2 = it },
+                                    label = { Text("Player 2 Symbol") },
+                                    singleLine = true,
+                                    modifier = Modifier
+                .fillMaxWidth()
+                                        .padding(vertical = 8.dp)
+                                )
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 16.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Button(
+                                        onClick = { showSymbolsDialog = false }
+                                    ) {
+                                        Text("Cancel")
+                                    }
+                                    Button(
+                                        onClick = {
+                                            if (tempPlayer1.isNotEmpty() && tempPlayer2.isNotEmpty() && tempPlayer1 != tempPlayer2) {
+                                                playerSymbols = PlayerSymbols(tempPlayer1, tempPlayer2)
+                                                showSymbolsDialog = false
+                                            }
+                                        }
+                                    ) {
+                                        Text("Save")
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -142,17 +231,17 @@ fun MainScreen(modifier: Modifier = Modifier) {
 fun GameBoard(
     dim: Int,
     gameScore: GameScore,
+    playerSymbols: PlayerSymbols,
     onScoreUpdate: (GameScore) -> Unit,
     onShowScore: () -> Unit,
     onNewGame: () -> Unit
 ) {
     val field = remember { mutableStateListOf(*Array(dim * dim) { "_" }) }
-    var currentPlayer by remember { mutableStateOf("X") }
+    var currentPlayer by remember { mutableStateOf(playerSymbols.player1) }
     var gameState by remember { mutableStateOf("") }
     var timeLeft by remember { mutableStateOf(10) }
     var isTimerActive by remember { mutableStateOf(true) }
     
-    // Timer effect
     LaunchedEffect(currentPlayer, gameState) {
         if (gameState.isEmpty()) {
             isTimerActive = true
@@ -162,14 +251,12 @@ fun GameBoard(
                 timeLeft--
             }
             if (timeLeft == 0 && isTimerActive) {
-                // Time's up, switch player
-                currentPlayer = if (currentPlayer == "X") "0" else "X"
+                currentPlayer = if (currentPlayer == playerSymbols.player1) playerSymbols.player2 else playerSymbols.player1
             }
         }
     }
     
     Column {
-        // Display scores
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -177,7 +264,7 @@ fun GameBoard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "X: ${gameScore.xWins}",
+                text = "${playerSymbols.player1}: ${gameScore.xWins}",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center
@@ -189,14 +276,13 @@ fun GameBoard(
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "O: ${gameScore.oWins}",
+                text = "${playerSymbols.player2}: ${gameScore.oWins}",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center
             )
         }
 
-        // Game controls
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -206,7 +292,7 @@ fun GameBoard(
                 onClick = {
                     field.clear()
                     field.addAll(Array(dim * dim) { "_" })
-                    currentPlayer = "X"
+                    currentPlayer = playerSymbols.player1
                     gameState = ""
                     isTimerActive = true
                     timeLeft = 10
@@ -235,7 +321,6 @@ fun GameBoard(
             }
         }
 
-        // Display current player and timer
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -263,39 +348,54 @@ fun GameBoard(
             }
         }
 
-        // Display game state if game is over
         if (gameState.isNotEmpty()) {
-            Text(
-                text = gameState,
-                style = MaterialTheme.typography.titleLarge,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp),
-                textAlign = TextAlign.Center
-            )
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = gameState,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    textAlign = TextAlign.Center
+                )
+                Button(
+                    onClick = {
+                        field.clear()
+                        field.addAll(Array(dim * dim) { "_" })
+                        currentPlayer = playerSymbols.player1
+                        gameState = ""
+                        isTimerActive = true
+                        timeLeft = 10
+                    }
+                ) {
+                    Text("Next Round")
+                }
+            }
         }
 
-        // Game board
         for (row in 0 until dim) {
             Row {
                 for (col in 0 until dim) {
                     val index = row * dim + col
                     Box(
-                        modifier = Modifier.size(80.dp)
+                        modifier = Modifier
+                            .size(80.dp)
                             .padding(4.dp)
                             .border(2.dp, MaterialTheme.colorScheme.primary)
                             .clickable {
                                 if (field[index] == "_" && gameState.isEmpty()) {
-                                    isTimerActive = false // Stop current timer
+                                    isTimerActive = false
                                     field[index] = currentPlayer
                                     
-                                    // Check for win
                                     if (checkWin(field, dim, currentPlayer)) {
                                         gameState = "$currentPlayer wins!"
                                         val newScore = gameScore.copy()
                                         when (currentPlayer) {
-                                            "X" -> newScore.xWins++
-                                            "0" -> newScore.oWins++
+                                            playerSymbols.player1 -> newScore.xWins++
+                                            playerSymbols.player2 -> newScore.oWins++
                                         }
                                         onScoreUpdate(newScore)
                                     } else if (!field.contains("_")) {
@@ -303,8 +403,9 @@ fun GameBoard(
                                         val newScore = gameScore.copy(draws = gameScore.draws + 1)
                                         onScoreUpdate(newScore)
                                     } else {
-                                        currentPlayer = if (currentPlayer == "X") "0" else "X"
-                                        isTimerActive = true // Start new timer
+                                        currentPlayer = if (currentPlayer == playerSymbols.player1) 
+                                            playerSymbols.player2 else playerSymbols.player1
+                                        isTimerActive = true
                                     }
                                 }
                             },
@@ -322,7 +423,6 @@ fun GameBoard(
 }
 
 private fun checkWin(field: List<String>, dim: Int, player: String): Boolean {
-    // Check rows
     for (row in 0 until dim) {
         var win = true
         for (col in 0 until dim) {
@@ -334,7 +434,6 @@ private fun checkWin(field: List<String>, dim: Int, player: String): Boolean {
         if (win) return true
     }
 
-    // Check columns
     for (col in 0 until dim) {
         var win = true
         for (row in 0 until dim) {
@@ -346,7 +445,6 @@ private fun checkWin(field: List<String>, dim: Int, player: String): Boolean {
         if (win) return true
     }
 
-    // Check main diagonal
     var win = true
     for (i in 0 until dim) {
         if (field[i * dim + i] != player) {
@@ -356,7 +454,6 @@ private fun checkWin(field: List<String>, dim: Int, player: String): Boolean {
     }
     if (win) return true
 
-    // Check anti-diagonal
     win = true
     for (i in 0 until dim) {
         if (field[i * dim + (dim - 1 - i)] != player) {
